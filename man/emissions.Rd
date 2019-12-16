@@ -4,10 +4,10 @@
 \alias{emissions}
 \title{Carbon Emissions Calculator}
 \usage{
-emissions(transport_mode = "plane", kilometers = 1)
+emissions(transport_mode = "plane", method = "distance", value = 1)
 }
 \arguments{
-\item{kilometers}{}
+\item{value}{}
 }
 \description{
 Estimate carbon dioxide emissions from travel
