@@ -20,7 +20,7 @@ emissions <- function(transport_mode = "plane", method = "distance", value = 1) 
     return(CO2_ton)
 
   } else if (transport_mode == "plane" && method == "spend") {
-    CO2_kg <- 0.30*value
+    CO2_kg <- 0.95*value
     CO2_ton <- CO2_kg/1000
     return(CO2_ton)
 
