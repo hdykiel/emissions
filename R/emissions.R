@@ -2,9 +2,9 @@
 #'
 #' Estimate carbon dioxide emissions from travel
 #'
-#' @param transport_mode
-#' @param method
-#' @param value
+#' @param transport_mode mode of transport
+#' @param method The calculation method to use: 'distance' for distance-based , or 'spend' for spend-based.
+#' @param value an integer value representing kilometers traveled for distance-based method, or US dollars spent for spend-based method.
 #'
 #' @return
 #' @export

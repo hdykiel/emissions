@@ -7,7 +7,11 @@
 emissions(transport_mode = "plane", method = "distance", value = 1)
 }
 \arguments{
-\item{value}{}
+\item{transport_mode}{mode of transport}
+
+\item{method}{The calculation method to use: 'distance' for distance-based , or 'spend' for spend-based.}
+
+\item{value}{an integer value representing kilometers traveled for distance-based method, or US dollars spent for spend-based method.}
 }
 \description{
 Estimate carbon dioxide emissions from travel
