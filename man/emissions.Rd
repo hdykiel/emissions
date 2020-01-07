@@ -17,5 +17,5 @@ emissions(transport_mode = "plane", method = "distance", value = 1)
 Estimate carbon dioxide emissions from travel
 }
 \examples{
-emissions("plane", 1000)
+emissions("plane", "distance", 1000)
 }

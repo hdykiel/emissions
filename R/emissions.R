@@ -10,7 +10,7 @@
 #' @export
 #'
 #' @examples
-#' emissions("plane", 1000)
+#' emissions("plane", "distance", 1000)
 emissions <- function(transport_mode = "plane", method = "distance", value = 1) {
 
   if (transport_mode == "plane" && method == "distance" ) {
