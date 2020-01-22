@@ -22,13 +22,16 @@ emissions <- function(transport_mode = "plane", method = "distance", value = 1) 
       CO2_ton
     }
     else if (method == "spend") {
-    CO2_kg <- 0.95 * value # EEIO factor
+    CO2_kg <- 1.321209 * value # EEIO factor
     CO2_ton <- CO2_kg / 1000
     CO2_ton
     }
     else {
-    stop("please enter a valid transportation mode")
+      stop("please enter a valid method")
     }
+  }
+  else {
+    stop("please enter a valid transportation method")
   }
 }
 
