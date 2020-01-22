@@ -35,4 +35,3 @@ emissions <- function(transport_mode = "plane", method = "distance", value = 1) 
   }
 }
 
-# eeio_factor(data = input data set)
