@@ -11,4 +11,10 @@ Description: Calculate greenhouse gas emissions from transportation activities a
 License: Apache License (>= 2.0)
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.1.1
+Depends: 
+    R (>= 2.10)
+Imports: 
+    dplyr,
+    magrittr,
+    readr
+RoxygenNote: 7.1.1
