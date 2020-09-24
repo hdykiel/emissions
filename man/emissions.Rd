@@ -4,19 +4,22 @@
 \alias{emissions}
 \title{Carbon Emissions Calculator}
 \usage{
-emissions(transport_mode = "plane", method = "distance", value = 1)
+emissions(category = "airplane", method = "distance", value = 1)
 }
 \arguments{
-\item{transport_mode}{mode of transport: 'plane' for air travel}
+\item{category}{category to calculate emissions for. Currently supported are: "airplane" for travel.}
 
 \item{method}{The calculation method to use: 'distance' for distance-based , or 'spend' for spend-based.}
 
 \item{value}{an integer value representing kilometers traveled for distance-based method, or US dollars spent for spend-based method.}
 }
+\value{
+CO2 emissions in tons
+}
 \description{
 Estimate carbon dioxide emissions from travel
 }
 \examples{
-emissions("plane", "distance", 1000)
+emissions("airplane", "distance", 1000)
 
 }
