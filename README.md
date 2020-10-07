@@ -1,39 +1,54 @@
-# emissions
+## Scope
 
-The `emissions` package helps calculate greenhouse gas emissions from travel activities. The methodology used to estimate emissions is based on guidance provided by the Greenhouse Gas Protocol, an emissions accounting standard established to help companies report greenhouse gas emissions accurately.
+`emissions` calculates greenhouse gas (GHG) emissions (as CO2 equivalents, *CO2e*) from business-related activities. Its scope is continuously being extended; in the initial release, we cover business travel only (corresponding to [GHG Protocol Scope 3, Category 6](https://ghgprotocol.org/sites/default/files/standards_supporting/Chapter6.pdf)). Further additions are likely to be guided by the emissions profile of a prototypical company operating in the services sector (e.g., IT services).
+
+## Context
+
+The [GHG Protocol](ghgprotocol.org) distinguishes three scopes of GHG emissions:
+
+-   Scope 1 emissions result from operations occurring at the reporting organization's site (direct emissions).
+
+-   Scope 2 emissions are a subset of indirect emissions, namely, those originating from purchased electricity, heat or steam.
+
+-   Scope 3 emissions include all remaining indirect ones, e.g., business travel, waste disposal, etc.
+
+### Data requirements
+
+For GHG reporting, two types of information are generally needed, so-called *activity data* and *emission factors*. Activity data vary by category, while emission factors relate amounts of activity to amounts of GHG emission.
+
+#### Business travel (scope 3, category 6)
+
+For business travel, the most frequently-used type of activity data will be travel distance (as opposed to fuel consumption, which usually will not be available.) Emission factors will then indicate GHG emissions per distance traveled.
+
+In some cases, distance data will not be available. As a workaround, spend can be related to distance, which will then be used for GHG calculation. This method, however, is not recommended by GHG; it should only be applied if there is no other way. For these cases, `emissions` provides the option to pass spend data. For air travel, spend will be converted to distance like so:
+
+```{price_to_km_air_travel <- function(price) (price - 50)/0.11}
+```
+
+When possible, though, users should empirically determine an appropriate conversion factor that better matches their specific circumstances.
+
+## Emission factors
+
+Emission factors for business travel are taken from the [U.S. Environmental Protection Agency](epa.gov)'s [2018 GHG emission factors inventory](https://www.epa.gov/sites/production/files/2018-03/documents/emission-factors_mar_2018_0.pdf), which indicates its reliance on the following primary sources:
+
+> CO2, CH4, and N2O emissions data for highway vehicles are from Table 2-13 of the Inventory of U.S. Greenhouse Gas Emissions and Sinks: 1990--2015. Vehicle-miles and passenger-miles data for highway vehicles are from Table VM-1 of the Federal Highway Administration Highway Statistics 2015.
+> Fuel consumption data and passenger-miles data for rail are from Tables A.14 to A.16 and 9.10 to 9.12 of the Transportation Energy Data Book: Edition 35. Fuel consumption was converted to emissions by using fuel and electricity emission factors presented in the tables above.
+> Air Travel factors from 2017 Guidelines to Defra / DECC's GHG Conversion Factors for Company Reporting. Version 1.0 August 2017.
+
+Our primary reason for not directly using the [conversion tables](https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2020) issued by the UK [Department for Business, Energy & Industrial Strategy](https://www.gov.uk/government/organisations/department-for-business-energy-and-industrial-strategy) (which seems to have replaced the above-cited Defra as issuer of those tables) is that these are more specifically tailored to the UK, while we expect most users of this package (at least initially) to come from the US.
 
 ## Installation
 
 You can install emissions from github with:
 
-
-``` r
+``` {.r}
 # install.packages("devtools")
 devtools::install_github("hdykiel/emissions")
 ```
 
 ## Examples
 
-``` r
-# calculate emissions (CO2 tons) for a 1,000 kilometer plane trip
-emissions("plane", "distance", 1000)
+``` {.r}
+# calculate emissions (tons of CO2e) for a 3 plane trips of 100, 1000, and 10000 kms each
+emissions("airplane", "distance", c(100, 1000, 10000))
 ```
-
-If you have spend data from Expensify, you can do e.g.:
-
-```
-library(expensify)
-library(dplyr)
-
-expensify_data <- summarize_expensify(expenses, category = "airplane", year = "2020")
-spend <- expensify_data %>% 
-  filter(Classification == "Airplanes") %>%
-  select(Spend) %>%
-  pull()
-
-spend %>% emissions(category = "airplane", method = "distance")
-```
-
-
-
-  
