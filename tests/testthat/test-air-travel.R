@@ -6,8 +6,4 @@ testthat::test_that("doubling distances results in doubled co2e", {
   testthat::expect_equal(2 * e1, e2)
 })
 
-testthat::test_that("doubling prices results in doubled co2e", { # if haul stays the same!
-  e1 <- emissions("airplane", type = "spend", c(100, 1000, 10000))
-  e2 <- emissions("airplane", type = "spend", 2 * c(100, 1000, 10000))
-  #testthat::expect_equal(2 * e1, e2)
-})
+

@@ -4,25 +4,22 @@
 \alias{emissions}
 \title{Carbon Emissions Calculator}
 \usage{
-emissions(category, type, value)
+emissions(category, value)
 }
 \arguments{
 \item{category}{category to calculate emissions for. Currently supported are:
 "airplane" for air travel.}
 
-\item{type}{category-dependent additional information. For air travel: "distance" or "spend".
-If you choose "spend", a default conversion factor will be used that maps spend to distance.}
-
-\item{value}{category-dependent value. For air travel, integer vector of either kilometers
-traveled or spend in USD. E.g., `value = c(220,800,2500)`.}
+\item{value}{category-dependent value. For air travel, integer vector of kilometers
+traveled. E.g., `value = c(220,800,2500)`.}
 }
 \value{
 CO2 equivalent emissions in tons
 }
 \description{
-Estimate green house gas emissions from travel
+Estimate green house gas emissions (CO2e)
 }
 \examples{
-emissions("airplane", "distance", c(100, 1000, 10000))
+emissions("airplane", c(100, 1000, 10000))
 
 }
