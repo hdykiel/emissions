@@ -1,12 +1,10 @@
 Package: emissions
 Title: Calculate Greenhouse Gas Emissions From Travel Activities
 Version: 0.0.0.9001
-Authors@R: 
-    person(given = "Hadrien",
-           family = "Dykiel",
-           role = c("aut", "cre"),
-           email = "hadrien@rstudio.com",
-           comment = structure("YOUR-ORCID-ID", .Names = "ORCID"))
+Authors@R: c(
+    person("Hadrien","Dykiel", email = "hadrien@rstudio.com", role = c("aut", "cre")),
+    person("Sigrid", "Keydana", email = "sigrid@rstudio.com", role = c("aut"))
+    )
 Description: Calculate greenhouse gas emissions from transportation activities as recommended by the Greenhouse Gas Protocol, a reporting standard  designed for organizations to track and report their emissions.
 License: Apache License (>= 2.0)
 Encoding: UTF-8
@@ -17,4 +15,6 @@ Imports:
     dplyr,
     magrittr,
     readr
+Suggests:
+    testthat (>= 2.1.0)
 RoxygenNote: 7.1.1
