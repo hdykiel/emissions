@@ -3,8 +3,12 @@
 #' Estimate green house gas emissions (CO2e)
 #'
 #' @param category category to calculate emissions for. Currently supported are:
-#'  "airplane" for air travel.
-#' @param value category-dependent value. For air travel, integer vector of kilometers
+#'  - "airplane" for air travel,
+#'  - "intercity" for long-distance trains, "commuter" for suburban trains, or "transit"
+#'   for urban rail services. If the exact category is unknown, specify "rail". In this case,
+#'   we try to determine the actual type from the distance.
+#'  - "car" as well as "bus", "motorcycle" and "light-duty truck" for road vehicles.
+#' @param value category-dependent value. For all forms of travel, integer vector of kilometers
 #' traveled. E.g., `value = c(220,800,2500)`.
 #'
 #' @return CO2 equivalent emissions in tons
@@ -14,29 +18,137 @@
 #'
 #' @examples
 #' emissions("airplane", c(100, 1000, 10000))
+#' emissions("rail", c(1, 10, 100))
 #'
 emissions <- function(category, value) {
 
-  available_categories <- c("airplane")
+  rail_types <- c("rail", "intercity", "commuter", "transit")
+  road_types <- c("road", "car", "bus", "motorcycle", "light-duty truck")
+  available_categories <- c("airplane", rail_types, road_types)
+
   if (!(category %in% available_categories)) stop("Please provide a valid category")
 
-  co2e_ton <- switch(category,
-         airplane = co2e_airplane(value)
-  )
-  co2e_ton
+  equivalents <- suppressMessages(readr::read_csv(system.file("conf", "global_warming_potential.conf", package = "emissions")))
+  ch4_eq <- equivalents %>% dplyr::filter(ghg == "ch4") %>% dplyr::select(factor) %>% dplyr::pull()
+  n2o_eq <- equivalents %>% dplyr::filter(ghg == "n2o") %>% dplyr::select(factor) %>% dplyr::pull()
+
+  co2_eq <- if (category == "airplane") co2e_airplane(value, c(ch4_eq, n2o_eq))
+    else if (category %in% rail_types) co2e_rail(value, category, c(ch4_eq, n2o_eq))
+    else if (category %in% road_types) co2e_road(value, category, c(ch4_eq, n2o_eq))
+
+  co2_ton <- co2_eq / 1000
+  co2_ton
 }
 
 #' @import dplyr
-co2e_airplane <- function(value) {
+co2e_road <- function(value, category, equivalents) {
 
-  equivalents <- suppressMessages(readr::read_csv(system.file("conf", "global_warming_potential.conf", package = "emissions")))
-  ch4_eq <- equivalents %>% dplyr::filter(ghg == "ch4") %>% dplyr::pull()
-  n2o_eq <- equivalents %>% dplyr::filter(ghg == "n2o") %>% dplyr::pull()
+  ch4_eq <- equivalents[1]
+  n2o_eq <- equivalents[2]
 
+  conf <- suppressMessages(readr::read_csv(system.file("conf", "road.conf", package = "emissions")))
+  conf <- conf %>% mutate(
+    co2_kg = km_to_mile(co2_kg),
+    ch4_g = km_to_mile(ch4_g),
+    n2o_g = km_to_mile(n2o_g)
+  )
+
+  distance_traveled <- sum(value)
+  type <- conf %>% filter(type == category)
+  distance_traveled * (
+    type$co2_kg +
+      type$ch4_g / 1000 / ch4_eq +
+      type$n2o_g / 1000 / n2o_eq
+  )
+}
+
+#' @import dplyr
+co2e_rail <- function(value, category, equivalents) {
+
+  ch4_eq <- equivalents[1]
+  n2o_eq <- equivalents[2]
+
+  conf <- suppressMessages(readr::read_csv(system.file("conf", "rail.conf", package = "emissions")))
+  conf <- conf %>% mutate(
+    co2_kg = km_to_mile(co2_kg),
+    ch4_g = km_to_mile(ch4_g),
+    n2o_g = km_to_mile(n2o_g)
+  )
+
+  co2_eq <- if (category != "rail") {
+    distance_traveled <- sum(value)
+    type <- conf %>% filter(type == category)
+    distance_traveled * (
+      type$co2_kg +
+      type$ch4_g / 1000 / ch4_eq +
+      type$n2o_g / 1000 / n2o_eq
+    )
+  } else {
+    # if the exact type is not known, we try to infer it from distance
+    intercity_threshold <- 30
+    commuter_threshold <- 10
+
+    transit_kms <- Filter(function(x) x < commuter_threshold, value) %>% sum()
+    commuter_kms <- Filter(function(x) between(x, commuter_threshold, intercity_threshold), value) %>% sum()
+    intercity_kms <- Filter(function(x) x > intercity_threshold, value) %>% sum()
+
+    transit_factors <- conf %>%
+      dplyr::filter(type == "transit") %>%
+      dplyr::select(co2_kg, ch4_g, n2o_g)
+
+    commuter_factors <- conf %>%
+      dplyr::filter(type == "commuter") %>%
+      dplyr::select(co2_kg, ch4_g, n2o_g)
+
+    intercity_factors <- conf %>%
+      dplyr::filter(type == "intercity") %>%
+      dplyr::select(co2_kg, ch4_g, n2o_g)
+
+    transit_co2eq <-
+      transit_kms * (
+        transit_factors$co2_kg +
+          transit_factors$ch4_g / 1000 / ch4_eq +
+          transit_factors$n2o_g / 1000 / n2o_eq
+      )
+
+    commuter_co2eq <-
+      commuter_kms * (
+        commuter_factors$co2_kg +
+          commuter_factors$ch4_g / 1000 / ch4_eq +
+          commuter_factors$n2o_g / 1000 / n2o_eq
+      )
+
+    intercity_co2eq <-
+      intercity_kms * (
+        intercity_factors$co2_kg +
+          intercity_factors$ch4_g / 1000 / ch4_eq +
+          intercity_factors$n2o_g / 1000 / n2o_eq
+      )
+
+   sum(c(transit_co2eq, commuter_co2eq, intercity_co2eq))
+  }
+
+  co2_eq
+
+}
+
+
+#' @import dplyr
+co2e_airplane <- function(value, equivalents) {
+
+  ch4_eq <- equivalents[1]
+  n2o_eq <- equivalents[2]
 
   conf <- suppressMessages(readr::read_csv(system.file("conf", "air_travel.conf", package = "emissions")))
-  threshold_medium <- miles_to_km(300) # could also be parsed from conf$additional_comments
-  threshold_long <- miles_to_km(2300)
+
+  conf <- conf %>% mutate(
+    co2_kg = km_to_mile(co2_kg),
+    ch4_g = km_to_mile(ch4_g),
+    n2o_g = km_to_mile(n2o_g)
+  )
+
+  threshold_medium <- mile_to_km(300) # could also be parsed from conf$additional_comments
+  threshold_long <- mile_to_km(2300)
 
   short_flight_factors <- conf %>%
     dplyr::filter(haul == "short") %>%
@@ -75,10 +187,10 @@ co2e_airplane <- function(value) {
         long_flight_factors$n2o_g / 1000 / n2o_eq
     )
 
-  co2_kg <- sum(c(short_flight_co2eq, medium_flight_co2eq, long_flight_co2eq))
-  co2_ton <- co2_kg / 1000
-  co2_ton
+  sum(c(short_flight_co2eq, medium_flight_co2eq, long_flight_co2eq))
 
 }
 
-miles_to_km <- function(miles) miles * 1.609344
+mile_to_km <- function(miles) miles * 1.609344
+km_to_mile <- function(km) km * 0.6213712
+

@@ -8,9 +8,13 @@ emissions(category, value)
 }
 \arguments{
 \item{category}{category to calculate emissions for. Currently supported are:
-"airplane" for air travel.}
+- "airplane" for air travel,
+- "intercity" for long-distance trains, "commuter" for suburban trains, or "transit"
+ for urban rail services. If the exact category is unknown, specify "rail". In this case,
+ we try to determine the actual type from the distance.
+- "car" as well as "bus", "motorcycle" and "light-duty truck" for road vehicles.}
 
-\item{value}{category-dependent value. For air travel, integer vector of kilometers
+\item{value}{category-dependent value. For all forms of travel, integer vector of kilometers
 traveled. E.g., `value = c(220,800,2500)`.}
 }
 \value{
@@ -21,5 +25,6 @@ Estimate green house gas emissions (CO2e)
 }
 \examples{
 emissions("airplane", c(100, 1000, 10000))
+emissions("rail", c(1, 10, 100))
 
 }
