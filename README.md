@@ -12,11 +12,11 @@ The [GHG Protocol](ghgprotocol.org) distinguishes three scopes of GHG emissions:
 
 -   Scope 3 emissions include all remaining indirect ones, e.g., business travel, waste disposal, etc.
 
-#### Data requirements
-
 For GHG reporting, two types of information are generally needed, so-called *activity data* and *emission factors*. Activity data vary by category, while emission factors relate amounts of activity to amounts of GHG emission.
 
-##### Business travel and employee commuting (scope 3, category 6)
+## Data requirements
+
+#### Business travel and employee commuting (scope 3, category 6)
 
 For business travel, the most frequently-used type of activity data is travel distance (as opposed to fuel consumption, which usually will not be available.) Emission factors then indicate GHG emissions per distance traveled.
 
