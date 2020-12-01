@@ -3,5 +3,6 @@
 export("%>%")
 export(emissions)
 import(dplyr)
+import(purrr)
 import(readr)
 importFrom(magrittr,"%>%")
