@@ -3,13 +3,22 @@
 #' Estimate green house gas emissions (CO2e)
 #'
 #' @param category category to calculate emissions for. Currently supported are:
-#'  - "airplane" for air travel,
+#'  - "airplane" for air travel;
 #'  - "intercity" for long-distance trains, "commuter" for suburban trains, or "transit"
 #'   for urban rail services. If the exact category is unknown, specify "rail". In this case,
-#'   we try to determine the actual type from the distance.
-#'  - "car" as well as "bus", "motorcycle" and "light-duty truck" for road vehicles.
-#' @param value category-dependent value. For all forms of travel, integer vector of kilometers
-#' traveled. E.g., `value = c(220,800,2500)`.
+#'   we try to determine the actual type from the distance;
+#'  - "car" as well as "bus", "motorcycle" and "light-duty truck" for road vehicles;
+#'  - "electricity"
+#' @param value category-dependent value.
+#' - For all forms of travel, integer vector of kilometers traveled. E.g., `value = c(220,800,2500)`.
+#' - For electricity, a list of two lists, the first one containing the years to calculate
+#'   emissions for, and the second, respective energy consumption in kilowatt-hours (kWh).
+#'   E.g., `value = list(list(2018, 2019), list(7777, 8888))`
+#' @param additional_info category-dependent value, not required for every category.
+#' - For travel: not required.
+#' - For electricity: geographic location; a string containing country and state abbreviations,
+#'   separated by |. For example: "US|MA" for Massachusetts. For the US, state is always required.
+#'   For other countries, it may be left out (together with the separating |).
 #'
 #' @return CO2 equivalent emissions in tons
 #' @import dplyr
@@ -19,14 +28,30 @@
 #' @examples
 #' emissions("airplane", c(100, 1000, 10000))
 #' emissions("rail", c(1, 10, 100))
+#' emissions("electricity", list(list(2018, 2019), list(777, 888)), "US|MA")
 #'
-emissions <- function(category, value) {
+emissions <- function(category, value, additional_info = NULL) {
 
   rail_types <- c("rail", "intercity", "commuter", "transit")
   road_types <- c("road", "car", "bus", "motorcycle", "light-duty truck")
-  available_categories <- c("airplane", rail_types, road_types)
+  available_categories <- c("airplane", rail_types, road_types, "electricity")
+  electricity_available_regions <- c("US|WA", "US|MA")
 
   if (!(category %in% available_categories)) stop("Please provide a valid category")
+
+  if (category == "electricity") {
+    if (length(value) != 2) {
+      stop("value has to be a list of two lists, e.g.: list(list(2018, 2019), list(777, 888))")
+    }
+    if (is.null(additional_info)) {
+      stop(paste0("Please provide a valid region for electricity usage. Available regions are: ",
+                  paste(electricity_available_regions, collapse = ", ")))
+    }
+    if (!(additional_info %in% electricity_available_regions)) {
+      stop(paste0("No emission factors available for region: ", additional_info,
+                  " . Consider opening a PR to add them."))
+    }
+  }
 
   equivalents <- suppressMessages(readr::read_csv(system.file("conf", "global_warming_potential.conf", package = "emissions")))
   ch4_eq <- equivalents %>% dplyr::filter(ghg == "ch4") %>% dplyr::select(factor) %>% dplyr::pull()
@@ -35,6 +60,7 @@ emissions <- function(category, value) {
   co2_eq <- if (category == "airplane") co2e_airplane(value, c(ch4_eq, n2o_eq))
     else if (category %in% rail_types) co2e_rail(value, category, c(ch4_eq, n2o_eq))
     else if (category %in% road_types) co2e_road(value, category, c(ch4_eq, n2o_eq))
+    else if (category == "electricity") co2e_electricity(value, additional_info)
 
   co2_ton <- co2_eq / 1000
   co2_ton
@@ -191,6 +217,34 @@ co2e_airplane <- function(value, equivalents) {
 
 }
 
+#' @import dplyr
+#' @import purrr
+co2e_electricity <- function(value, additional_info) {
+
+  conf <- suppressMessages(readr::read_csv(system.file("conf", "electricity.conf", package = "emissions")))
+
+  split <- strsplit(additional_info, "[|]") %>% unlist()
+  country_ <- split[1]
+  state_ <- split[2]
+
+  # should not normally be reached, anyway leaving in for now
+  if (country_ == "US" && is.na(state_)) stop("Need state if country is US")
+
+  yearly_emissions <- purrr::map2(value[[1]], value[[2]], function(year_, kwh) {
+    lbs_mwh <- conf %>% filter(country == country_, state == state_, year == year_) %>%
+      select(co2_lbs_mwh) %>% pull()
+    value_mwh <- kwh / 1000
+    co2_kg <- lb_to_kg(value_mwh * lbs_mwh)
+    co2_kg
+  })
+
+  unlist(yearly_emissions)
+
+}
+
+# conversions
 mile_to_km <- function(miles) miles * 1.609344
 km_to_mile <- function(km) km * 0.6213712
+lb_to_kg <- function(lb) lb * 453.59237 / 1000
+
 

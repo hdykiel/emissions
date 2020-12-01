@@ -4,18 +4,28 @@
 \alias{emissions}
 \title{Carbon Emissions Calculator}
 \usage{
-emissions(category, value)
+emissions(category, value, additional_info = NULL)
 }
 \arguments{
 \item{category}{category to calculate emissions for. Currently supported are:
-- "airplane" for air travel,
+- "airplane" for air travel;
 - "intercity" for long-distance trains, "commuter" for suburban trains, or "transit"
  for urban rail services. If the exact category is unknown, specify "rail". In this case,
- we try to determine the actual type from the distance.
-- "car" as well as "bus", "motorcycle" and "light-duty truck" for road vehicles.}
+ we try to determine the actual type from the distance;
+- "car" as well as "bus", "motorcycle" and "light-duty truck" for road vehicles;
+- "electricity"}
 
-\item{value}{category-dependent value. For all forms of travel, integer vector of kilometers
-traveled. E.g., `value = c(220,800,2500)`.}
+\item{value}{category-dependent value.
+- For all forms of travel, integer vector of kilometers traveled. E.g., `value = c(220,800,2500)`.
+- For electricity, a list of two lists, the first one containing the years to calculate
+  emissions for, and the second, respective energy consumption in kilowatt-hours (kWh).
+  E.g., `value = list(list(2018, 2019), list(7777, 8888))`}
+
+\item{additional_info}{category-dependent value, not required for every category.
+- For travel: not required.
+- For electricity: geographic location; a string containing country and state abbreviations,
+  separated by |. For example: "US|MA" for Massachusetts. For the US, state is always required.
+  For other countries, it may be left out (together with the separating |).}
 }
 \value{
 CO2 equivalent emissions in tons
@@ -26,5 +36,6 @@ Estimate green house gas emissions (CO2e)
 \examples{
 emissions("airplane", c(100, 1000, 10000))
 emissions("rail", c(1, 10, 100))
+emissions("electricity", list(list(2018, 2019), list(777, 888)), "US|MA")
 
 }
