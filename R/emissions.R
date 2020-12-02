@@ -35,21 +35,17 @@ emissions <- function(category, value, additional_info = NULL) {
   rail_types <- c("rail", "intercity", "commuter", "transit")
   road_types <- c("road", "car", "bus", "motorcycle", "light-duty truck")
   available_categories <- c("airplane", rail_types, road_types, "electricity")
-  electricity_available_regions <- c("US|WA", "US|MA")
 
   if (!(category %in% available_categories)) stop("Please provide a valid category")
 
   if (category == "electricity") {
     if (length(value) != 2) {
-      stop("value has to be a list of two lists, e.g.: list(list(2018, 2019), list(777, 888))")
+      stop("value has to be a list of two lists (years / kWh, resp.) E.g.: list(list(2018, 2019), list(777, 888))")
     }
     if (is.null(additional_info)) {
-      stop(paste0("Please provide a valid region for electricity usage. Available regions are: ",
-                  paste(electricity_available_regions, collapse = ", ")))
-    }
-    if (!(additional_info %in% electricity_available_regions)) {
-      stop(paste0("No emission factors available for region: ", additional_info,
-                  " . Consider opening a PR to add them."))
+      stop(paste0("Please provide a region for electricity usage. Regions are concatenations of ",
+                  "country|state, if available (required if country == US), or just country otherwise. ",
+                  "E.g.: US|MA, France, Germany|Bavaria."))
     }
   }
 
@@ -221,25 +217,84 @@ co2e_airplane <- function(value, equivalents) {
 #' @import purrr
 co2e_electricity <- function(value, additional_info) {
 
-  conf <- suppressMessages(readr::read_csv(system.file("conf", "electricity.conf", package = "emissions")))
-
   split <- strsplit(additional_info, "[|]") %>% unlist()
   country_ <- split[1]
   state_ <- split[2]
 
-  # should not normally be reached, anyway leaving in for now
-  if (country_ == "US" && is.na(state_)) stop("Need state if country is US")
+  # 27 EU countries plus UK, Turkey, Island, Norway
+  countries_eu <- c("Austria","Belgium","Bulgaria","Croatia","Cyprus","Czech Republic","Denmark","Estonia","Finland","France","Germany","Greece","Hungary","Ireland","Italy","Latvia","Lithuania","Luxembourg","Malta","Netherlands","Poland","Portugal","Romania","Slovakia","Slovenia","Spain","Sweden","United Kingdom","Turkey","Island","Norway")
+  eu_countries_with_state <- c("Germany")
 
-  yearly_emissions <- purrr::map2(value[[1]], value[[2]], function(year_, kwh) {
-    lbs_mwh <- conf %>% filter(country == country_, state == state_, year == year_) %>%
-      select(co2_lbs_mwh) %>% pull()
-    value_mwh <- kwh / 1000
-    co2_kg <- lb_to_kg(value_mwh * lbs_mwh)
-    co2_kg
-  })
+  yearly_emissions <- if (country_ == "US") {
+
+    if (is.na(state_)) {
+      stop("Need state if country is US. E.g.: US|WA.")
+    }
+
+    conf <- suppressMessages(readr::read_csv(system.file("conf", "electricity_us.conf", package = "emissions")))
+
+    validate_years(conf, value)
+
+    purrr::map2(value[[1]], value[[2]], function(year_, kwh) {
+      lbs_mwh <- conf %>% filter(country == country_, state == state_, year == year_) %>%
+        select(co2_lbs_mwh) %>% pull()
+      value_mwh <- kwh / 1000
+      co2_kg <- lb_to_kg(value_mwh * lbs_mwh)
+      co2_kg
+    })
+
+  } else if (country_ %in% countries_eu) {
+
+    conf <- if (is.na(state_)) {
+
+    ########################################## to generate #################################
+
+    # eu <- readr::read_csv("~/Downloads/2017_CO2_IntensEL_EEA.csv")
+    # df <- eu %>% filter(!stringr::str_detect(CountryShort, "^EU\\d")) %>%
+    #   transmute(country = CountryLong, year = Year, co2_g_kwh = ValueNumeric) %>%
+    #   tibble::add_column(state = NULL) %>%
+    #   tibble::add_column(source = "https://www.eea.europa.eu/data-and-maps/data/co2-intensity-of-electricity-generation")
+    # df %>% readr::write_csv("electricity_eu_global.conf")
+
+    ########################################################################################
+
+      suppressMessages(readr::read_csv(system.file("conf", "electricity_eu_global.conf", package = "emissions")))
+
+      } else if (!is.na(state_) && country_ %in% eu_countries_with_state) {
+
+        filename <- paste0("electricity", "_eu_", tolower(country_), ".conf")
+        suppressMessages(readr::read_csv(system.file("conf", filename, package = "emissions")))
+
+      }
+
+    validate_years(conf, value)
+
+    purrr::map2(value[[1]], value[[2]], function(year_, kwh) {
+      g_kwh <- conf %>% filter(country == country_, state == if (!is.na(state_)) state_ else "unknown", year == year_) %>%
+        select(co2_g_kwh) %>% pull()
+      co2_kg <-kwh * g_kwh / 1000
+      co2_kg
+    })
+
+  } else {
+
+  stop(paste0("No emission factors available for region: ", additional_info,
+              ". Consider opening a PR to add them."))
+  }
 
   unlist(yearly_emissions)
 
+}
+
+# helper functions
+
+validate_years <- function(conf, value) {
+
+  min_year <- min(conf$year)
+  max_year <- max(conf$year)
+  years <- value[[1]] %>% unlist() %>% sort()
+  if (min(years) < min_year || max(years) > max_year) stop(paste0("Not all years available. Available range is ",
+                                                                  min_year, " - ", max_year, "."))
 }
 
 # conversions
