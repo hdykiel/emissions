@@ -9,11 +9,13 @@
 #'   we try to determine the actual type from the distance;
 #'  - "car" as well as "bus", "motorcycle" and "light-duty truck" for road vehicles;
 #'  - "electricity"
+#'  - "natural gas"
 #' @param value category-dependent value.
 #' - For all forms of travel, integer vector of kilometers traveled. E.g., `value = c(220,800,2500)`.
 #' - For electricity, a list of two lists, the first one containing the years to calculate
 #'   emissions for, and the second, respective energy consumption in kilowatt-hours (kWh).
 #'   E.g., `value = list(list(2018, 2019), list(7777, 8888))`
+#' - For natural gas, an integer vector of Mcf consumed
 #' @param additional_info category-dependent value, not required for every category.
 #' - For travel: not required.
 #' - For electricity: geographic location; a string containing country and state abbreviations,
@@ -34,7 +36,7 @@ emissions <- function(category, value, additional_info = NULL) {
 
   rail_types <- c("rail", "intercity", "commuter", "transit")
   road_types <- c("road", "car", "bus", "motorcycle", "light-duty truck")
-  available_categories <- c("airplane", rail_types, road_types, "electricity")
+  available_categories <- c("airplane", rail_types, road_types, "electricity", "natural_gas")
 
   if (!(category %in% available_categories)) stop("Please provide a valid category")
 
