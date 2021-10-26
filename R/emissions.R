@@ -59,6 +59,7 @@ emissions <- function(category, value, additional_info = NULL) {
     else if (category %in% rail_types) co2e_rail(value, category, c(ch4_eq, n2o_eq))
     else if (category %in% road_types) co2e_road(value, category, c(ch4_eq, n2o_eq))
     else if (category == "electricity") co2e_electricity(value, additional_info)
+    else if (category == "natural_gas") co2e_natural_gas(value, additional_info)
 
   co2_ton <- co2_eq / 1000
   co2_ton
@@ -286,6 +287,12 @@ co2e_electricity <- function(value, additional_info) {
 
   unlist(yearly_emissions)
 
+}
+
+#' @import dplyr
+
+co2e_natural_gas <- function(value, additional_info){
+  # write function here
 }
 
 # helper functions
