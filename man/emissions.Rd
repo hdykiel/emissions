@@ -39,5 +39,6 @@ Estimate green house gas emissions (CO2e)
 emissions("airplane", c(100, 1000, 10000))
 emissions("rail", c(1, 10, 100))
 emissions("electricity", list(list(2018, 2019), list(777, 888)), "US|MA")
+emissions("natural_gas", c(10, 1000, 1000))
 
 }
