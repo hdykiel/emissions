@@ -293,6 +293,12 @@ co2e_electricity <- function(value, additional_info) {
 
 co2e_natural_gas <- function(value, additional_info){
   # write function here
+
+  # this function could accept either Mcf or BTU, which appear to be the same thing. Let's start with one to keep things simple
+  # Need to confirm if CO2 emissions are the same everywhere, every year
+
+  conf <- suppressMessages(readr::read_csv(system.file("conf", "natural_gas.conf", package = "emissions")))
+
 }
 
 # helper functions
