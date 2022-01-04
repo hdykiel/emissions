@@ -9,11 +9,13 @@
 #'   we try to determine the actual type from the distance;
 #'  - "car" as well as "bus", "motorcycle" and "light-duty truck" for road vehicles;
 #'  - "electricity"
+#'  - "natural gas"
 #' @param value category-dependent value.
 #' - For all forms of travel, integer vector of kilometers traveled. E.g., `value = c(220,800,2500)`.
 #' - For electricity, a list of two lists, the first one containing the years to calculate
 #'   emissions for, and the second, respective energy consumption in kilowatt-hours (kWh).
 #'   E.g., `value = list(list(2018, 2019), list(7777, 8888))`
+#' - For natural gas, an integer vector of Mcf consumed
 #' @param additional_info category-dependent value, not required for every category.
 #' - For travel: not required.
 #' - For electricity: geographic location; a string containing country and state abbreviations,
@@ -29,12 +31,13 @@
 #' emissions("airplane", c(100, 1000, 10000))
 #' emissions("rail", c(1, 10, 100))
 #' emissions("electricity", list(list(2018, 2019), list(777, 888)), "US|MA")
+#' emissions("natural_gas", c(10, 1000, 1000))
 #'
 emissions <- function(category, value, additional_info = NULL) {
 
   rail_types <- c("rail", "intercity", "commuter", "transit")
   road_types <- c("road", "car", "bus", "motorcycle", "light-duty truck")
-  available_categories <- c("airplane", rail_types, road_types, "electricity")
+  available_categories <- c("airplane", rail_types, road_types, "electricity", "natural_gas")
 
   if (!(category %in% available_categories)) stop("Please provide a valid category")
 
@@ -57,7 +60,9 @@ emissions <- function(category, value, additional_info = NULL) {
     else if (category %in% rail_types) co2e_rail(value, category, c(ch4_eq, n2o_eq))
     else if (category %in% road_types) co2e_road(value, category, c(ch4_eq, n2o_eq))
     else if (category == "electricity") co2e_electricity(value, additional_info)
+    else if (category == "natural_gas") co2e_natural_gas(value)
 
+  # convert CO2 kilograms to metric tons
   co2_ton <- co2_eq / 1000
   co2_ton
 }
@@ -283,6 +288,22 @@ co2e_electricity <- function(value, additional_info) {
   }
 
   unlist(yearly_emissions)
+
+}
+
+#' @import dplyr
+
+co2e_natural_gas <- function(value){
+
+  # Next steps: confirm if McF and BTU are the same thing. This function could accept either Mcf or BTU, which appear to be the same thing. Let's start with one to keep things simple
+  # Also to confirm if CO2 emissions are the same in every country, every year
+
+  # load conversion information
+  conf <- suppressMessages(readr::read_csv(system.file("conf", "natural_gas.conf", package = "emissions")))
+  # conf <- suppressMessages(readr::read_csv(here::here("inst/conf", "natural_gas.conf")))
+
+  # calculate CO2 kilograms
+  c02_eq_kg <- value * conf$co2_kg_Mcf
 
 }
 

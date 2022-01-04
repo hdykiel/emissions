@@ -13,13 +13,15 @@ emissions(category, value, additional_info = NULL)
  for urban rail services. If the exact category is unknown, specify "rail". In this case,
  we try to determine the actual type from the distance;
 - "car" as well as "bus", "motorcycle" and "light-duty truck" for road vehicles;
-- "electricity"}
+- "electricity"
+- "natural gas"}
 
 \item{value}{category-dependent value.
 - For all forms of travel, integer vector of kilometers traveled. E.g., `value = c(220,800,2500)`.
 - For electricity, a list of two lists, the first one containing the years to calculate
   emissions for, and the second, respective energy consumption in kilowatt-hours (kWh).
-  E.g., `value = list(list(2018, 2019), list(7777, 8888))`}
+  E.g., `value = list(list(2018, 2019), list(7777, 8888))`
+- For natural gas, an integer vector of Mcf consumed}
 
 \item{additional_info}{category-dependent value, not required for every category.
 - For travel: not required.
